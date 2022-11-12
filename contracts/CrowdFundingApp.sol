@@ -13,7 +13,8 @@ contract CrowdFundingApp is ERC721URIStorage{
     // address payable postOwner;
 
     //The fee charged by the platform to publish a post.
-    uint256 platformCharge = 0.01 ether;
+    uint256 platformCharge = 0.001 ether;
+    uint256 platformChargePercentage = 2;
 
     using Counters for Counters.Counter;
     //_tokenIds variable has the most recent minted tokenId
@@ -24,6 +25,7 @@ contract CrowdFundingApp is ERC721URIStorage{
         address payable contractOwner;
         address payable postOwner;
         uint256 funding;
+        string postTitle;
         string postDescription;
         bool postStatus;
         uint256 timestamp;
@@ -35,6 +37,7 @@ contract CrowdFundingApp is ERC721URIStorage{
         address contractOwner,
         address postOwner,
         uint256 funding,
+        string postTitle,
         string postDescription,
         bool postStatus,
         uint256 timestamp
@@ -44,14 +47,15 @@ contract CrowdFundingApp is ERC721URIStorage{
     //This mapping maps postId to Post info and is helpful when retrieving details about a Post 
     mapping(uint256 => Post) private postIdToPostMap;
 
+    //User funded amount To Post Map
+    mapping(uint256 => mapping(address => uint256)) postToFunderToFundMap;
+
     constructor() ERC721("CrowdFundingApp", "CFA") {
         contractOwner = payable(msg.sender);
     }
 
-    function createPost(uint256 funding, string memory postDescription) public payable returns(uint){
+    function createPost(string memory _postTitle, string memory _postDescription) public payable returns(uint){
         require(msg.value >= platformCharge, "PLatform charge requirement doesn't meet");
-
-        require(funding > 0, "Fund atleast a positive amount");
 
         // INcrement the postId counter, which is keeping track of the number for created Posts.
         _postIdCounter.increment();
@@ -60,15 +64,18 @@ contract CrowdFundingApp is ERC721URIStorage{
         //Mint the Post with postId newPostId to the address who called createPost
         _safeMint(msg.sender, newPostId);
 
-        postIdToPostMap[newPostId] = Post(
+        Post memory newPost = Post(
             newPostId,
             payable(address(this)),
             payable(msg.sender),
             0,
-            postDescription,
+            _postTitle,
+            _postDescription,
             true,
             block.timestamp
         );
+
+        postIdToPostMap[newPostId] = newPost;
 
         _transfer(msg.sender, address(this), newPostId);
 
@@ -77,8 +84,9 @@ contract CrowdFundingApp is ERC721URIStorage{
             newPostId, 
             address(this), 
             msg.sender, 
-            funding, 
-            postDescription, 
+            0,
+            _postTitle,
+            _postDescription,
             true, 
             block.timestamp
         );
@@ -103,10 +111,33 @@ contract CrowdFundingApp is ERC721URIStorage{
     }
 
     function fundAPost(uint256 postId) public payable{
+        require(msg.value > 0, "Fund atleast a positive amount");
         postIdToPostMap[postId].funding += msg.value;
         //Transfering user given fund(msg.sender) to the contract.
         payable(address(this)).transfer(msg.value);
+        //Emit the event for successful transfer. Frontend parses this and displays it
 
+        require(msg.value > 0, "You have no funding amount avaialble");
+        transferFundToPostOwner(postId, msg.value);
+
+        emit ListPost(
+            postId,
+            address(this),
+            msg.sender,
+            postIdToPostMap[postId].funding,
+            postIdToPostMap[postId].postTitle,
+            postIdToPostMap[postId].postDescription,
+            true,
+            block.timestamp
+        );
+    }
+
+    function transferFundToPostOwner(uint256 postId, uint256 fund) public payable{
+        address postOwner = postIdToPostMap[postId].postOwner;
+
+        payable(contractOwner).transfer(fund * (platformChargePercentage/100));
+
+        payable(postOwner).transfer(fund - (fund * (platformChargePercentage/100)));
     }
 
     function withdrawPostFunds(uint256 postId) public payable{
@@ -118,6 +149,10 @@ contract CrowdFundingApp is ERC721URIStorage{
 
         payable(postOwner).transfer(postIdToPostMap[postId].funding);
         postIdToPostMap[postId].funding = 0;
+        postIdToPostMap[postId].postStatus = false;
     }
+
+
+
 }
 
