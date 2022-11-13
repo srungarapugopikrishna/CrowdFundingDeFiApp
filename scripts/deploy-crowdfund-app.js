@@ -24,7 +24,7 @@ async function createAPost() {
 }
 
 async function getDeployedContract() {
-  const MyContract = await ethers.getContractFactory("NFTMarketplace");
+  const MyContract = await ethers.getContractFactory("CrowdFundingApp");
   const deployedContract = await MyContract.attach(CrowdFundingAppJson.address);
   return deployedContract;
 }
