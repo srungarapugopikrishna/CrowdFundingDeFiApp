@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract CrowdFundingApp is ERC721URIStorage{
+
     //contractOwner is the address that created the smart contract
     address payable contractOwner;
 
@@ -18,7 +19,7 @@ contract CrowdFundingApp is ERC721URIStorage{
 
     using Counters for Counters.Counter;
     //_tokenIds variable has the most recent minted tokenId
-    Counters.Counter private _postIdCounter;
+    Counters.Counter public _postIdCounter;
 
     struct Post{
         uint256 postId;
@@ -45,7 +46,7 @@ contract CrowdFundingApp is ERC721URIStorage{
     );
 
     //This mapping maps postId to Post info and is helpful when retrieving details about a Post 
-    mapping(uint256 => Post) private postIdToPostMap;
+    mapping(uint256 => Post) public postIdToPostMap;
 
     //User funded amount To Post Map
     mapping(uint256 => mapping(address => uint256)) postToFunderToFundMap;
@@ -54,8 +55,20 @@ contract CrowdFundingApp is ERC721URIStorage{
         contractOwner = payable(msg.sender);
     }
 
+    function getplatformChargePercentage() public view returns(uint256){
+        return platformChargePercentage;
+    }
+
+    function getPlatformCharge() public view returns(uint256){
+        return platformCharge;
+    }
+
+    function getPostByPostId(uint256 postId) public view returns(Post memory){
+        return postIdToPostMap[postId];
+    }
+
     function createPost(string memory _postTitle, string memory _postDescription) public payable returns(uint){
-        require(msg.value >= platformCharge, "PLatform charge requirement doesn't meet");
+        require(msg.value >= platformCharge, "Platform charge requirement doesn't meet");
 
         // INcrement the postId counter, which is keeping track of the number for created Posts.
         _postIdCounter.increment();
