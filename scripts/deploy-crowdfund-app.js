@@ -1,11 +1,11 @@
 const hre = require("hardhat");
 const fs = require("fs");
-const CrowdFundingAppJson = require("../CrowdFundingApp.json");
+// const CrowdFundingAppJson = require("../CrowdFundingApp.json");
 
 async function deployApp() {
   const CFA = await hre.ethers.getContractFactory("CrowdFundingApp");
   const crowdFundingApp = await CFA.deploy();
-
+  console.log("Deploying crowdFundingApp");
   //Deploying contract
   await crowdFundingApp.deployed();
   console.log("CrowdFundingApp deployed To: ", crowdFundingApp.address);
@@ -16,6 +16,10 @@ async function deployApp() {
   };
 
   fs.writeFileSync("./CrowdFundingApp.json", JSON.stringify(data));
+  fs.writeFileSync(
+    "../crowdfundapp-fe/src/CrowdFundingApp.json",
+    JSON.stringify(data)
+  );
 }
 
 async function createAPost() {
@@ -24,14 +28,14 @@ async function createAPost() {
 }
 
 async function getDeployedContract() {
-  const MyContract = await ethers.getContractFactory("NFTMarketplace");
+  const MyContract = await ethers.getContractFactory("CrowdFundingApp");
   const deployedContract = await MyContract.attach(CrowdFundingAppJson.address);
   return deployedContract;
 }
 
 async function main() {
-  //   deployApp();
-  createAPost();
+  deployApp();
+  // createAPost();
 }
 main().catch((error) => {
   console.error(error);
