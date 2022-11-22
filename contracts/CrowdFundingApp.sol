@@ -14,7 +14,7 @@ contract CrowdFundingApp is ERC721URIStorage{
     // address payable postOwner;
 
     //The fee charged by the platform to publish a post.
-    uint256 platformCharge = 0.001 ether;
+    uint256 platformCharge = 0.0001 ether;
     uint256 platformChargePercentage = 2;
 
     using Counters for Counters.Counter;
@@ -145,13 +145,13 @@ contract CrowdFundingApp is ERC721URIStorage{
     function fundAPost(uint256 postId) public payable{
         require(msg.value > 0, "Fund atleast a positive amount");
         postIdToPostMap[postId].funding += msg.value;
-        //Transfering user given fund(msg.sender) to the contract.
-        payable(address(this)).transfer(msg.value);
+        //Transfering user given fund(msg.value) to the postOwner.
+        payable(postIdToPostMap[postId].postOwner).transfer((msg.value-platformCharge));
+
+        //Transfering user given platformCharge to the platformOwner.
+        payable(postIdToPostMap[postId].contractOwner).transfer(platformCharge);
+
         //Emit the event for successful transfer. Frontend parses this and displays it
-
-        require(msg.value > 0, "You have no funding amount avaialble");
-        transferFundToPostOwner(postId, msg.value);
-
         emit ListPost(
             postId,
             address(this),
