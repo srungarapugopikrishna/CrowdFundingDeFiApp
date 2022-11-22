@@ -117,10 +117,29 @@ contract CrowdFundingApp is ERC721URIStorage{
             currentPostId = i+1;
             Post storage currentPost = postIdToPostMap[currentPostId];
             allPosts[currentIndex] = currentPost;
-            currentIndex == 1;
+            currentIndex += 1;
         }
 
         return allPosts;
+    }
+
+    function fundPost(uint256 postId) public payable{
+        require(msg.value > 0, "Fund atleast a positive amount");
+        postIdToPostMap[postId].funding += msg.value;
+        //Transfering user given fund(msg.sender) to the contract.
+        payable(postIdToPostMap[postId].postOwner).transfer(msg.value);
+
+        //Emit the event for successful transfer. Frontend parses this and displays it
+        emit ListPost(
+            postId,
+            address(this),
+            msg.sender,
+            postIdToPostMap[postId].funding,
+            postIdToPostMap[postId].postTitle,
+            postIdToPostMap[postId].postDescription,
+            true,
+            block.timestamp
+        );
     }
 
     function fundAPost(uint256 postId) public payable returns(uint){
