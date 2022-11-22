@@ -142,7 +142,7 @@ contract CrowdFundingApp is ERC721URIStorage{
         );
     }
 
-    function fundAPost(uint256 postId) public payable{
+    function fundAPost(uint256 postId) public payable returns(uint){
         require(msg.value > 0, "Fund atleast a positive amount");
         postIdToPostMap[postId].funding += msg.value;
         //Transfering user given fund(msg.value) to the postOwner.
@@ -162,6 +162,7 @@ contract CrowdFundingApp is ERC721URIStorage{
             true,
             block.timestamp
         );
+        return msg.value;
     }
 
     function transferFundToPostOwner(uint256 postId, uint256 fund) public payable{
